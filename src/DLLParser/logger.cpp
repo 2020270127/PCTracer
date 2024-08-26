@@ -1,10 +1,10 @@
-#pragma once
-
 #include "logger.h"
+#include "strconv.h"
 
 namespace logging
 {
     using namespace std;
+    using namespace strconv;
 
     void Logger::setLogType(const LogLevel& logLevel, const LogDirection& logDirection, const bool& addFuncInfo)
     {
@@ -96,7 +96,7 @@ namespace logging
         {
             if (addFuncInfo_)
             {
-                output(format("Function = {:s}({:d}), Error code = 0x{2:x}({2:d}), Msg = ", funcName, funcLine, errorCode), false);
+                output(format("Function = {0:s}({1:d}), Error code = 0x{2:x}({2:d}), Msg = ", funcName, funcLine, errorCode), false);
             }
             output(format("{:s}", logMessage), useEndl);
         }
@@ -114,84 +114,102 @@ namespace logging
         }
     };
 
-    // DatabaseLogger 생성자
-    DatabaseLogger::DatabaseLogger(const wstring& dbPath, const string& tableName) : tableName_(tableName), Ordinal(0), Address(0)
+    
+    SQLDBLogger::SQLDBLogger(const tstring& tSQLDBPath, const tstring& tableName) 
     {
-        if (sqlite3_open16(dbPath.c_str(), &db))
+#ifdef UNICODE
+        tstring sqlDBPath = tDBPath;
+#else
+        wstring sqlDBPath = StrConv_.ansi2unicode(tSQLDBPath);
+#endif
+    
+        if (sqlite3_open16(sqlDBPath.c_str(), &globalSQLDBPointer))
         {
-            wcout << L"Can't open database: " << sqlite3_errmsg(db) << endl;
-            db = nullptr;
+            Logger_.log(format(_T("Can't open database: {}\n"), sqlite3_errmsg(globalSQLDBPointer)),LOG_LEVEL_ERROR);
+            globalSQLDBPointer = nullptr;
+        }         
+    }
+
+    void SQLDBLogger::createTable(const tstring& tSQLDBPath, const tstring& sqlTableName) 
+    {
+        globalTSQLTableName = sqlTableName;
+
+#ifdef UNICODE
+        tstring sqlDBPath = tDBPath;
+#else
+        wstring sqlDBPath = StrConv_.ansi2unicode(tSQLDBPath);
+#endif
+
+        if (sqlite3_open16(sqlDBPath.c_str(), &globalSQLDBPointer))
+        {
+            Logger_.log(format(_T("Can't open database: {}"), sqlite3_errmsg(globalSQLDBPointer)), LOG_LEVEL_ERROR);
+            globalSQLDBPointer = nullptr;
         }
         else
         {
-            string sql = "CREATE TABLE IF NOT EXISTS " + tableName_ + " ("
+            string sql = "CREATE TABLE IF NOT EXISTS " + globalTSQLTableName + " ("
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
                 "RVA TEXT,"
                 "Ordinal TEXT,"
                 "Name TEXT);";
             char* errMsg = nullptr;
-            if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK)
+            if (sqlite3_exec(globalSQLDBPointer, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK)
             {
+                Logger_.log(format(_T("SQL error: {}"), errMsg), LOG_LEVEL_ERROR);
                 wcout << L"SQL error: " << errMsg << endl;
                 sqlite3_free(errMsg);
             }
         }
     }
-
-    // DatabaseLogger 소멸자
-    DatabaseLogger::~DatabaseLogger()
+    
+    SQLDBLogger::~SQLDBLogger()
     {
-        if (db)
+        if (globalSQLDBPointer)
         {
-            sqlite3_close(db);
+            sqlite3_close(globalSQLDBPointer);
         }
     }
-
-    // 로그 메시지를 콘솔에 출력
-    void DatabaseLogger::logToConsole(tstring Name, size_t Ordinal, size_t Address) const
+    
+    void SQLDBLogger::LogToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress) 
     {
-        wostringstream oss;
-        oss << L"          > " << setw(18) << setfill(L'0') << hex << Address
-            << L", " << setw(6) << setfill(L'0') << hex << Ordinal
-            << L", " << Name;
-        wcout << oss.str() << endl;
-    }
-
-    // 로그 메시지를 데이터베이스에 기록
-    void DatabaseLogger::logToDatabase(tstring Name, size_t Ordinal, size_t Address) const
-    {
-        if (db)
+        if (globalSQLDBPointer)
         {
-            string sql = "INSERT INTO " + tableName_ + " (Name, Ordinal, RVA) VALUES (?, ?, ?);";
-            sqlite3_stmt* stmt;
-            if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK)
+            string sql = "INSERT INTO " + globalTSQLTableName + " (Name, Ordinal, RVA) VALUES (?, ?, ?);";
+            sqlite3_stmt* stmt = nullptr;
+            wstring Name = L"No Information";
+            if (sqlite3_prepare_v2(globalSQLDBPointer, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK)
             {
-                ostringstream ordinalStream;
-                ordinalStream << setw(6) << setfill('0') << hex << Ordinal;
-                string ordinal = ordinalStream.str();
+                if (functionName != "")
+                {
+                    #ifdef UNICODE
+                    tstring Name = tName;
+                    #else
+                    Name = StrConv_.ansi2unicode(functionName);
+                    #endif
+                } 
 
                 sqlite3_bind_text16(stmt, 1, Name.c_str(), -1, SQLITE_STATIC);
-                sqlite3_bind_text(stmt, 2, ordinal.c_str(), -1, SQLITE_STATIC);
-                sqlite3_bind_int(stmt, 3, static_cast<int>(Address));
+                sqlite3_bind_int(stmt, 2, static_cast<int>(functionOrdinal));
+                sqlite3_bind_int(stmt, 3, static_cast<int>(functionAddress));
 
                 if (sqlite3_step(stmt) != SQLITE_DONE)
                 {
-                    wcout << L"SQL error: " << sqlite3_errmsg(db) << endl;
+                    Logger_.log(format(_T("SQL error:  {}\n"), sqlite3_errmsg(globalSQLDBPointer)), LOG_LEVEL_ERROR);
                 }
                 sqlite3_finalize(stmt);
             }
             else
             {
-                wcout << L"SQL error: " << sqlite3_errmsg(db) << endl;
+                Logger_.log(format(_T("SQL error:  {}\n"), sqlite3_errmsg(globalSQLDBPointer)), LOG_LEVEL_ERROR);
             }
         }
     }
 
-    // 로그 메시지를 콘솔과 데이터베이스에 기록
-    void DatabaseLogger::log(tstring Name, size_t Ordinal, size_t Address)
+   
+    void SQLDBLogger::printToConsoleAndLogToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress)
     {
-        // logToConsole(Name, Ordinal, Address);
-        logToDatabase(Name, Ordinal, Address);
+        Logger_.log(format(_T("Function {}({}), at {:x}"), functionName, functionOrdinal, functionAddress));
+        LogToSQLDB(functionName, functionOrdinal, functionAddress);
     }
 };
 

@@ -1,30 +1,28 @@
-#pragma once
-
 #include "cmdparser.h"
 
 namespace cmdutil
 {
     using namespace std;
 
-    // ¿É¼Ç ÀÌ¸§ ºñ±³ (ÀÌ¸§ ¶Ç´Â º°ÄªÀÌ ÀÏÄ¡ÇÏ´Â Áö ¿©ºÎ È®ÀÎ)
+    // ï¿½É¼ï¿½ ï¿½Ì¸ï¿½ ï¿½ï¿½ (ï¿½Ì¸ï¿½ ï¿½Ç´ï¿½ ï¿½ï¿½Äªï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½Ï´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½)
     bool CmdBase::compare(const tstring& name)
     {
         return ((name_.compare(name) == 0) || (alternative_.compare(name) == 0));
     };
 
-    // ÇÊ¼ö ¿É¼ÇÀÎÁö ¿©ºÎ È®ÀÎ
+    // ï¿½Ê¼ï¿½ ï¿½É¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
     bool CmdBase::isRequired(void)
     {
         return required_;
     };
 
-    // ¿É¼Ç °ªÀÌ ¼³Á¤µÇ¾ú´Â Áö ¿©ºÎ È®ÀÎ
+    // ï¿½É¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
     bool CmdBase::isSet(void)
     {
         return isSet_;
     };
 
-    // OPTION_INFO_TYPE¿¡ Á¤ÀÇµÈ ¿É¼ÇÀÇ Á¤º¸¸¦ ¾òÀ½
+    // OPTION_INFO_TYPEï¿½ï¿½ ï¿½ï¿½ï¿½Çµï¿½ ï¿½É¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     tstring CmdBase::getOptionInfo(const OPTION_INFO_TYPE& type)
     {
         switch (type)
@@ -40,13 +38,13 @@ namespace cmdutil
         }
     };
 
-    // ¿É¼ÇÀÌ ÇÏ³ª¶óµµ µî·Ï µÇ¾ú´ÂÁö ¿©ºÎ È®ÀÎ
+    // ï¿½É¼ï¿½ï¿½ï¿½ ï¿½Ï³ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
     bool CmdParser::hasOptions(void)
     {
         return !command_.empty();
     };
 
-    // µî·ÏµÇ¾î ÀÖ´Â ÇÊ¼ö ¿É¼ÇµéÀÌ ´Ù ¼³Á¤µÇ¾ú´ÂÁö Ã¼Å©
+    // ï¿½ï¿½ÏµÇ¾ï¿½ ï¿½Ö´ï¿½ ï¿½Ê¼ï¿½ ï¿½É¼Çµï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¼Å©
     bool CmdParser::isRequiredOptionSet(void)
     {
         bool isSet = true;
@@ -62,15 +60,15 @@ namespace cmdutil
         return isSet;
     }
 
-    // µµ¿ò¸» Ãâ·Â ¿©ºÎ È®ÀÎ
-    // (µµ¿ò¸» Ãâ·Â ¿É¼ÇÀÌ ÁöÁ¤µÇ¾ú°Å³ª µî·ÏµÈ ¿É¼ÇÀÌ ¾ø°Å³ª 
-    // ÇÊ¼ö ¿É¼ÇÀÇ °ªÀÌ ¼³Á¤µÇÁö ¾ÊÀº °æ¿ì µµ¿ò¸» Ãâ·ÂÀÌ ÇÊ¿ä)
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
+    // (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½É¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½Å³ï¿½ ï¿½ï¿½Ïµï¿½ ï¿½É¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Å³ï¿½ 
+    // ï¿½Ê¼ï¿½ ï¿½É¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½)
     bool CmdParser::isPrintHelp(void)
     {
         return (help_ || (!hasOptions()) || (!isRequiredOptionSet()));
     };
 
-    // ÀúÀåµÈ ¿É¼Ç ¸ðµÎ Á¦°Å
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½É¼ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     void CmdParser::clear(void)
     {
         for (const auto& iter : command_)
@@ -81,7 +79,7 @@ namespace cmdutil
         help_ = false;
     };
 
-    // ÀÌ¸§À¸·Î ¿É¼ÇÀÌ ÀúÀåµÈ À§Ä¡ÀÇ iterator Ã£±â
+    // ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½É¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ iterator Ã£ï¿½ï¿½
     vector<CmdBase*>::iterator CmdParser::find(const tstring& name)
     {
         for (vector<CmdBase*>::iterator iter = command_.begin(); iter != command_.end(); iter++)
@@ -107,10 +105,10 @@ namespace cmdutil
         }
         else
         {
-            // Ã¹ ¹øÂ° Ç×¸ñÀº ½ÇÇà ÆÄÀÏ ÀÚ½ÅÀÇ ÀÌ¸§ÀÌ±â ¶§¹®¿¡ Á¦°Å
+            // Ã¹ ï¿½ï¿½Â° ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½Ì±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             for (int index = 1; index < argc; index++)
             {
-                // µµ¿ò¸» Ãâ·Â ¿É¼ÇÀÌ ÁöÁ¤ µÆ´ÂÁö È®ÀÎ 
+                // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½É¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´ï¿½ï¿½ï¿½ È®ï¿½ï¿½ 
                 name = argv[index];
                 if ((name.compare(_T("-h")) == 0) || (name.compare(_T("--help")) == 0))
                 {
@@ -119,14 +117,14 @@ namespace cmdutil
                 }
                 else if (name.at(0) == '-')
                 {
-                    // ¿É¼Ç ¹®ÀÚ¿­¿¡¼­ '-' ¹®ÀÚ Á¦°Å
+                    // ï¿½É¼ï¿½ ï¿½ï¿½ï¿½Ú¿ï¿½ï¿½ï¿½ï¿½ï¿½ '-' ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                     name.erase(remove(name.begin(), name.end(), '-'), name.end());
 
-                    // µî·ÏµÈ ¿É¼ÇÀÎÁö ¿©ºÎ¸¦ È®ÀÎÇÏ¿©, µî·ÏµÈ ¿É¼ÇÀÌ¸é ÀÔ·ÂµÈ °ªÀ» ÀÐ¾î¼­ ÀúÀå
+                    // ï¿½ï¿½Ïµï¿½ ï¿½É¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Î¸ï¿½ È®ï¿½ï¿½ï¿½Ï¿ï¿½, ï¿½ï¿½Ïµï¿½ ï¿½É¼ï¿½ï¿½Ì¸ï¿½ ï¿½Ô·Âµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ð¾î¼­ ï¿½ï¿½ï¿½ï¿½
                     // iter == vector<CmdBase*>::iterator
                     const auto& iter = find(name);
 
-                    if ((iter != command_.end()) && (++index < argc)) // ++index·Î ¿É¼Ç¿¡ ÁöÁ¤µÈ °ª À§Ä¡·Î ÀÌµ¿
+                    if ((iter != command_.end()) && (++index < argc)) // ++indexï¿½ï¿½ ï¿½É¼Ç¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½Ìµï¿½
                     {
                         const auto& type = typeid(*(*iter));
                         try
@@ -143,10 +141,10 @@ namespace cmdutil
                             {
                                 (dynamic_cast<CmdOption<tstring> *>(*iter))->set(tstring(argv[index]));
                             }
-                            // typeid ÀÎ½Ä °¡´ÉÇÑ Å¸ÀÔ¿¡ ´ëÇØ¼­ Ãß°¡ °¡´É
+                            // typeid ï¿½Î½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ô¿ï¿½ ï¿½ï¿½ï¿½Ø¼ï¿½ ï¿½ß°ï¿½ ï¿½ï¿½ï¿½ï¿½
                             else
                             {
-                                // typeid name()Àº char*
+                                // typeid name()ï¿½ï¿½ char*
                                 cout << format("Unknown option type : {}\n", typeid(*(*iter)).name());
                             }
                         }
@@ -160,7 +158,7 @@ namespace cmdutil
         }
     };
 
-    // µµ¿ò¸» ¹®ÀÚ¿­ ¾ò±â
+
     tstring CmdParser::getHelpMessage(const tstring& program)
     {
         tstring help_msg;

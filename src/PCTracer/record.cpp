@@ -1,6 +1,7 @@
 #include "record.h"
 #include "debugger.h"
 #include "strconv.h"
+#include <filesystem>
 
 namespace record
 {
@@ -11,20 +12,19 @@ namespace record
     RECORD::RECORD(tstring searchDBPath, int log_type) : log_type_(log_type), recordDB(nullptr),
         functionName(L"Unknown Function"), re(LR"(([^\\]+)\.dll$)", std::regex_constants::icase)
     {
-        // search«“ DB ∑ŒµÂ
         if (sqlite3_open(tstringToString(searchDBPath).c_str(), &searchDB) != SQLITE_OK) {
             std::string errMsg = "Failed to open database: " + std::string(sqlite3_errmsg(searchDB));
             sqlite3_close(searchDB);
             throw std::runtime_error(errMsg);
         }
 
-        // write ∫Œ∫–
         wstring basePath = getExecutablePath();
 
         if (log_type == 1) // textLog
         {
             wstring logFilePath = basePath + L"\\" + L"logs.txt";
-            logFile.open(logFilePath);
+            std::filesystem::path path(logFilePath);
+            logFile.open(path);
             if (!logFile) {
                 wcerr << L"Failed to open log file: " << logFilePath << endl;
                 throw runtime_error("Failed to open log file");
@@ -57,7 +57,6 @@ namespace record
 
     RECORD::~RECORD()
     {
-        // ∏Æº“Ω∫ «ÿ¡¶
         if (recordDB) {
             sqlite3_close(recordDB);
         }
@@ -69,12 +68,11 @@ namespace record
     wstring RECORD::getExecutablePath()
     {
         wchar_t buffer[MAX_PATH];
-        GetModuleFileName(NULL, buffer, MAX_PATH);
+        GetModuleFileNameW(NULL, buffer, MAX_PATH);
         wstring::size_type pos = wstring(buffer).find_last_of(L"\\/");
         return wstring(buffer).substr(0, pos);
     }
 
-    // SQLITE3 DBø°º≠ ∞°¿Â ∞°±ı∞‘ ¿˚¿∫(«œπÊ ±ŸªÁƒ°) RVA∞™¿ª ∞°¡ˆ¥¬ µ•¿Ã≈Õ∏¶ √£∞Ì, «ÿ¥Á«œ¥¬ ∏…πˆ¿« Name¿ª π›»Ø 
     wstring RECORD::findClosestFunctionByRVA(sqlite3* db, DWORD rva, const string& tableName) {
         string sql("SELECT Name FROM " + tableName + " WHERE RVA <= ? ORDER BY RVA DESC LIMIT 1;");
 
@@ -102,7 +100,6 @@ namespace record
         return "";
     }
 
-    // π¸¿ßø° µ˚∂Û DLL ¿Ã∏ß √£±‚ π◊ ∞°¿Â ±Ÿ¡¢«— «‘ºˆ ¿Ã∏ß √£±‚
     wstring RECORD::findDllNameByPc(PVOID pc) {
         DWORD rva;
         string dllName;
@@ -143,12 +140,12 @@ namespace record
             throw runtime_error(errMsg);
         }
 
-        // ∆˜¿Œ≈Õ∏¶ 16¡¯ºˆ πÆ¿⁄ø≠∑Œ ∫Ø»Ø
+        // ÔøΩÔøΩÔøΩÔøΩÔøΩÕ∏ÔøΩ 16ÔøΩÔøΩÔøΩÔøΩ ÔøΩÔøΩÔøΩ⁄øÔøΩÔøΩÔøΩ ÔøΩÔøΩ»Ø
         stringstream ss;
         ss << "0x" << hex << (uintptr_t)pc;
         string pcStr = ss.str();
 
-        // wstring¿ª string¿∏∑Œ ∫Ø»Ø
+        // wstringÔøΩÔøΩ stringÔøΩÔøΩÔøΩÔøΩ ÔøΩÔøΩ»Ø
         string dllNameStr(dllName.begin(), dllName.end());
 
         sqlite3_bind_text(stmt, 1, pcStr.c_str(), -1, SQLITE_STATIC);
@@ -171,13 +168,12 @@ namespace record
         PcInfo pcInfo;
 
         cout << "logging started..." << endl;
-        // ∫§≈Õ¿« ø‰º“∏¶ º¯¬˜¿˚¿∏∑Œ ¡¢±Ÿ
         do
         {
             while (!pcManager.isEmpty())
             {
                 try {
-                    pcInfo = pcManager.getPcInfo(); // «ˆ¿Á ¿Œµ¶Ω∫¿« ø‰º“∏¶ ¿–æÓø»
+                    pcInfo = pcManager.getPcInfo(); 
                 }
                 catch (const out_of_range& e) {
                     cerr << "Index out of range: " << e.what() << endl;

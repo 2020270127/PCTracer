@@ -1,60 +1,54 @@
 #include "dllparser.h"
 
-
-
 using namespace peparser;
 using namespace std;
 
-
-
-void dllParser::processDLL(const wstring& dllPath, const string& tableName)
+void dllParser::saveDLLEATToSQLTable(const tstring& dllPath, const tstring& sqlTableName)
 {
-    PEParser* peParser = new PEParser();
-    if (peParser->open(dllPath.c_str()))
+    if (PEParser_.open(dllPath))
     {
-        PEPrint* pePrint = new PEPrint(tableName);
-        if (peParser->parseEATCustom())
+        PEPrint_.createTable(globalDBName, sqlTableName);
+        if (PEParser_.parseEATCustom())
         {
-            cout << "Parsing " << tableName << "..." << endl;
-            pePrint->printEAT(peParser->getPEStructure());
+            Logger_.log(format(_T("Parsing{} ...\n"), sqlTableName), LOG_LEVEL_ALL);
+            PEPrint_.printEAT(PEParser_.getPEStructure());
         }
         else
         {
-            cout << "Parsing " << tableName << " failed" << endl;
+            Logger_.log(format(_T("Parsing {} failed \n"), sqlTableName), LOG_LEVEL_ERROR);
         }
-        delete pePrint;
     }
     else
     {
-        wcout << "Opening " << dllPath << " Failed" << endl;
+        Logger_.log(format(_T("Opening {} Failed\n"), dllPath), LOG_LEVEL_ERROR);
     }
-    delete peParser;
+    PEParser_.close();
 }
 
-void dllParser::ParseDllRecursively(const wstring& directoryPath)
+void dllParser::parseDLLEATRecursively(const tstring& targetDirectoryPath)
 {
-    wstring filePath; // dll 경로
-    string fileName; // sql 테이블에 기입할 dll 이름
+    tstring targetDLLPath; 
+    tstring sqlTableName;
 
     try
     {
-        for (const auto& entry : filesystem::directory_iterator(directoryPath))
+        for (const auto& entry : filesystem::directory_iterator(targetDirectoryPath))
         {
-            if (entry.is_regular_file() && entry.path().extension() == L".dll")
+            if (entry.is_regular_file() && entry.path().extension() == _T(".dll"))
             {
-                filePath = entry.path().wstring();
-                fileName = entry.path().stem().string(); // 파일명에서 확장자를 제거한 이름을 추출
-                processDLL(filePath, fileName);
+                targetDLLPath = entry.path().string();
+                sqlTableName = entry.path().stem().string(); 
+                saveDLLEATToSQLTable(targetDLLPath, sqlTableName);
             }
         }
     }
     catch (const filesystem::filesystem_error& e)
     {
-        wcerr << L"Filesystem error: " << e.what() << endl;
+        Logger_.log(format(_T("Filesystem error: {}\n"), e.what()), LOG_LEVEL_ERROR);
     }
     catch (const exception& e)
     {
-        wcerr << L"General error: " << e.what() << endl;
+        Logger_.log(format(_T("General error: {}\n"), e.what()), LOG_LEVEL_ERROR);
     }
 }
 

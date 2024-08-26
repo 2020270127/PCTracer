@@ -1,15 +1,8 @@
-#pragma once
-
 #include "peprint.h"
 
 namespace peparser
 {
 #define LINE_SPLIT _T("\n---------------------------------------------------------------------------------\n")
-
-    PEPrint::PEPrint(const string& tableName) : dbLogger_(L"DLL.db", tableName)
-    {
-        logger_.setLogType(LOG_LEVEL_ALL, LOG_DIRECTION_CONSOLE, FALSE);
-    };
 
     void PEPrint::printEAT(const PE_STRUCT& peStructure)
     {
@@ -22,11 +15,11 @@ namespace peparser
                 {
                     if (peStructure.is32Bit)
                     {
-                        dbLogger_.log(funcElement.Name, funcElement.Ordinal, funcElement.Address); // Name, Ordianl, RVA 순으로 기입
+                        dbLogger_.printToConsoleAndLogToSQLDB(funcElement.Name, funcElement.Ordinal, funcElement.Address); 
                     }
                     else
                     {
-                        dbLogger_.log(funcElement.Name, funcElement.Ordinal, funcElement.Address); // Name, Ordianl, RVA 순으로 기입
+                        dbLogger_.printToConsoleAndLogToSQLDB(funcElement.Name, funcElement.Ordinal, funcElement.Address); 
                     }
                 }
                 logger_.log(_T("\n"));
@@ -34,5 +27,10 @@ namespace peparser
             logger_.log(LINE_SPLIT);
         }
     };
+
+    void PEPrint::createTable(const tstring& dbPath, const tstring& tableName)
+    {
+        dbLogger_.createTable(dbPath, tableName);
+    }
 };
 

@@ -5,30 +5,31 @@
 #include <fstream>
 #include <mutex>
 #include <queue>
+#include <atomic>
 #include "typedef.h"
 
 namespace debugger
 {
     using namespace std;
 
-    static unordered_map<DWORD, HANDLE> contextMap; // ÇÁ·Î±×·¥ÀÇ Context¸¦ ÀúÀåÇÒ ¸Ê
+    static unordered_map<DWORD, HANDLE> contextMap; // ï¿½ï¿½ï¿½Î±×·ï¿½ï¿½ï¿½ Contextï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 
-    // DLL Á¤º¸¸¦ ÀúÀåÇÒ ±¸Á¶Ã¼
+    // DLL ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
     struct DllInfo {
         wstring name;
         LPVOID baseAddr;
         DWORD size;
     };
 
-    // ½ÇÇà Èå¸§¿¡ µû¸¥ PC, threadID¸¦ ÀúÀåÇÒ ±¸Á¶Ã¼
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½å¸§ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ PC, threadIDï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
     struct PcInfo {
         PVOID pc;
         DWORD threadId;
     };
 
-    extern vector<DllInfo> dllList; // DllInfo ±¸Á¶Ã¼¸¦ ÀúÀåÇÒ º¤ÅÍ
+    extern vector<DllInfo> dllList; // DllInfo ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-    // °øÀ¯ÇÏ´Â pcCollection º¤ÅÍ¸¦ ¾ÈÀüÇÏ°Ô Á¢±ÙÇÏ±â À§ÇÑ Å¬·¡½º
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ pcCollection ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½
     class PcCollectionManager
     {
     private:
@@ -46,19 +47,19 @@ namespace debugger
     class Debug
     {
     private:
-        DEBUG_EVENT debugEvent; // µð¹ö±ë ÀÌº¥Æ® ±¸Á¶Ã¼
-        PROCESS_INFORMATION pi; // ÇÁ·Î¼¼½º Á¤º¸ ±¸Á¶Ã¼
-        STARTUPINFO si; // ÇÁ·Î¼¼½º ½ÃÀÛ Á¤º¸ ±¸Á¶Ã¼
-        BOOL continueDebugging = TRUE; // µð¹ö±ë ·çÇÁ »óÅÂ
-        HANDLE hProcess; // EnumProcessModules·Î ¸ðµâÀ» °Ë»öÇÒ ´ë»ó ÇÁ·Î¼¼½º
-        HMODULE hMods[1024]; // EnumProcessModules·Î ÇÁ·Î¼¼½ºÀÇ °¢ ¸ðµâÀ» ¹Þ±â À§ÇÑ ÇÚµé ¹è¿­, ÃÖ´ë 1024°³ÀÇ ¸ðµâÀ» ¹ÞÀ½ (±âº»°ª) 
-        DWORD cbNeeded; // ½ÇÁ¦ ·ÎµåµÈ ¸ðµâÀÇ Å©±â
-        MODULEINFO modInfo; // ¸ðµâ Á¤º¸ ±¸Á¶Ã¼
-        void SetTrapFlag(HANDLE hThread); // pc ±â·ÏÀ» À§ÇÑ context trap flag ¼³Á¤ ¸Þ¼­µå
+        DEBUG_EVENT debugEvent; // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ìºï¿½Æ® ï¿½ï¿½ï¿½ï¿½Ã¼
+        PROCESS_INFORMATION pi; // ï¿½ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
+        STARTUPINFO si; // ï¿½ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
+        BOOL continueDebugging = TRUE; // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        HANDLE hProcess; // EnumProcessModulesï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë»ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Î¼ï¿½ï¿½ï¿½
+        HMODULE hMods[1024]; // EnumProcessModulesï¿½ï¿½ ï¿½ï¿½ï¿½Î¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Þ±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Úµï¿½ ï¿½è¿­, ï¿½Ö´ï¿½ 1024ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½âº»ï¿½ï¿½) 
+        DWORD cbNeeded; // ï¿½ï¿½ï¿½ï¿½ ï¿½Îµï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Å©ï¿½ï¿½
+        MODULEINFO modInfo; // ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
+        void SetTrapFlag(HANDLE hThread); // pc ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ context trap flag ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½
     public:
-        Debug(tstring  cmdLine); // Debug Å¬·¡½º »ý¼ºÀÚ
-        ~Debug(); // Debug Å¬·¡½º ¼Ò¸êÀÚ
-        void loop(atomic_bool* isDebuggerOn); // pc ±â·ÏÀ» À§ÇÑ µð¹ö±ë ·çÇÁ
+        Debug(tstring  cmdLine); // Debug Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        ~Debug(); // Debug Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½Ò¸ï¿½ï¿½ï¿½
+        void loop(atomic_bool* isDebuggerOn); // pc ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     };
 }
 

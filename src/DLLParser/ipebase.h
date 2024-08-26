@@ -7,7 +7,7 @@ namespace peparser
 {
 	using namespace strconv;
 
-	// DATA_DIRECTORY Å¸ÀÔ Á¤ÀÇ
+	// DATA_DIRECTORY Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	enum PE_DIRECTORY_TYPE
 	{
 		PE_DIRECTORY_ALL = 0xff,
@@ -17,7 +17,7 @@ namespace peparser
 		PE_DIRECTORY_DEBUG = 0x8
 	};
 
-	// Section Á¤º¸ ÀúÀåÀ» À§ÇÑ ±¸Á¶Ã¼ Á¤ÀÇ
+	// Section ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
 	typedef struct _SECTION_INFO
 	{
 		tstring Name;
@@ -30,7 +30,7 @@ namespace peparser
 	SECTION_INFO, * PSECTION_INFO;
 	typedef vector<SECTION_INFO> SectionList;
 
-	// Function Á¤º¸ ÀúÀåÀ» À§ÇÑ ±¸Á¶Ã¼ Á¤ÀÇ
+	// Function ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
 	typedef struct _FUNCTION_INFO
 	{
 		tstring Name;
@@ -40,10 +40,10 @@ namespace peparser
 	FUNCTION_INFO, * PFUNCTION_INFO;
 	typedef vector<FUNCTION_INFO> Functionist;
 
-	// Module name, FUNCTION_INFO Á¤º¸ ÀúÀåÀ» À§ÇÑ º¤ÅÍ(Æ©ÇÃ) Á¤ÀÇ
+	// Module name, FUNCTION_INFO ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(Æ©ï¿½ï¿½) ï¿½ï¿½ï¿½ï¿½
 	typedef vector<tuple<tstring, Functionist>> ModuleFunctionist;
 
-	// PDB Á¤º¸¸¦ ´ãÀ» ±¸Á¶Ã¼ Á¤ÀÇ
+	// PDB ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
 #define IMAGE_PDB_SIGNATURE 0x53445352 // "RSDS"
 	typedef struct _IMAGE_PDB_INFO
 	{
@@ -54,7 +54,7 @@ namespace peparser
 	}
 	IMAGE_PDB_INFO, * PIMAGE_PDB_INFO;
 
-	// PDB ÆÄÀÏ Á¤º¸¸¦ ´ãÀ» ±¸Á¶Ã¼ Á¤ÀÇ
+	// PDB ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
 	typedef struct _PDB_FILE_INFO
 	{
 		tstring FilePath;
@@ -62,17 +62,17 @@ namespace peparser
 	}
 	PDB_FILE_INFO, * PPDB_FILE_INFO;
 
-	// TLS Callback ÁÖ¼Ò Á¤º¸¸¦ ´ãÀ» ±¸Á¶Ã¼ Á¤ÀÇ
+	// TLS Callback ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
 	typedef struct _TLS_CALLBACK
 	{
 		size_t TlsCallbackAddress;
 	}
 	TLS_CALLBACK, * PTLS_CALLBACK;
 
-	// TLS Callback ÁÖ¼Ò Á¤º¸ ÀúÀåÀ» À§ÇÑº¤ÅÍ Á¤ÀÇ
+	// TLS Callback ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ñºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	typedef vector<TLS_CALLBACK> TlsCallbackList;
 
-	// PE Á¤º¸¸¦ ´ã±â À§ÇÑ ±¸Á¶Ã¼ Á¤ÀÇ
+	// PE ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½
 	typedef struct _PE_STRUCT
 	{
 		bool is32Bit;
@@ -98,18 +98,18 @@ namespace peparser
 	}
 	PE_STRUCT;
 
-	// PE file ¶Ç´Â PE process °øÅëÀ¸·Î ÇÊ¿äÇÑ ÇÔ¼öµéÀ» Á¤ÀÇÇÑ ÀÎÅÍÆäÀÌ½º Å¬·¡½º
+	// PE file ï¿½Ç´ï¿½ PE process ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½
 	class IPEBase
 	{
 	public:
 		virtual ~IPEBase() = default;
-		virtual bool isPE(void) const abstract;
-		virtual bool is32bit(void) const abstract;
-		virtual const tstring getFilePath(void) const abstract;
-		virtual size_t getBaseAddress(void) const abstract;
-		virtual bool getRealAddress(const size_t& rva, size_t& raw) const abstract;
-		virtual bool getData(const size_t& address, const size_t& size, BinaryData& data) const abstract;
-		virtual void setHeaderSize(const size_t& sizeOfHeaders) abstract;
-		virtual void setSectionList(const SectionList& sectionLists) abstract;
+		virtual bool isPE(void) const = 0;
+		virtual bool is32bit(void) const = 0;
+		virtual const tstring getFilePath(void) const = 0;
+		virtual size_t getBaseAddress(void) const = 0;
+		virtual bool getRealAddress(const size_t& rva, size_t& raw) const = 0;
+		virtual bool getData(const size_t& address, const size_t& size, BinaryData& data) const = 0;
+		virtual void setHeaderSize(const size_t& sizeOfHeaders) = 0;
+		virtual void setSectionList(const SectionList& sectionLists) = 0;
 	};
 };

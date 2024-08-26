@@ -12,13 +12,13 @@ namespace peparser
 
 	private:
 		Logger logger_;
-		DatabaseLogger dbLogger_;
+		SQLDBLogger dbLogger_;
 
 	public:
-		//PEPrint();
-		PEPrint(const string& tableName);
+		PEPrint() : dbLogger_("DLL.db", "defaultTable") {};
 		~PEPrint() = default;
 		void printEAT(const PE_STRUCT& peStructure);
+		void createTable(const tstring& dbPath, const tstring& tableName);
 	};
 };
 

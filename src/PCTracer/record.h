@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include "typedef.h"
 
 namespace record
@@ -8,14 +9,14 @@ namespace record
 	class RECORD
 	{
 	private:
-		int log_type_; // ·Î±ë Å¸ÀÔ, 1ÀÌ¸é ÅØ½ºÆ® ÆÄÀÏ·Î, ´Ù¸¥ °ªÀÌ¸é sqlite3 db·Î ÀúÀå
-		wofstream logFile; // pc trace ±â·ÏÀ» ÀúÀåÇÏ±â À§ÇÑ ÆÄÀÏ ½ºÆ®¸²
-		sqlite3* recordDB; // pc trace ±â·ÏÀ» ÀúÀåÇÏ±â À§ÇÑ sqlite3 DB pointer
-		sqlite3* searchDB; // dll Á¤º¸¸¦ °¡Á®¿À±â À§ÇÑ sqlite3 DB pointer
-		sqlite3_stmt* stmt; // db ±â·ÏÀ» À§ÇÑ sql statement
-		wstring functionName; // pc·Î traceÇÑ ÇÔ¼ö ÀÌ¸§
-		wregex re; // dll ÀÌ¸§ ÃßÃâÀ» À§ÇÑ Á¤±Ô½Ä
-		wsmatch match; // dll ÀÌ¸§ ÃßÃâ °á°ú¸¦ ÀúÀåÇÏ±â À§ÇÑ º¯¼ö
+		int log_type_; // ï¿½Î±ï¿½ Å¸ï¿½ï¿½, 1ï¿½Ì¸ï¿½ ï¿½Ø½ï¿½Æ® ï¿½ï¿½ï¿½Ï·ï¿½, ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½Ì¸ï¿½ sqlite3 dbï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		wofstream logFile; // pc trace ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ®ï¿½ï¿½
+		sqlite3* recordDB; // pc trace ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ sqlite3 DB pointer
+		sqlite3* searchDB; // dll ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ sqlite3 DB pointer
+		sqlite3_stmt* stmt; // db ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ sql statement
+		wstring functionName; // pcï¿½ï¿½ traceï¿½ï¿½ ï¿½Ô¼ï¿½ ï¿½Ì¸ï¿½
+		wregex re; // dll ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ô½ï¿½
+		wsmatch match; // dll ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		string extractDllName(const std::wstring& dllPath);
 		wstring getExecutablePath();
 		wstring findClosestFunctionByRVA(sqlite3* db, DWORD rva, const std::string& tableName);

@@ -9,13 +9,13 @@ namespace strconv
 
 	class StrConv
 	{
-	private:
-		const wstring ansi2unicode(const string_view& str);
-		const string unicode2ansi(const wstring_view& str);
-		const u8string ansi2u8(const string_view& str);
-		const u8string unicode2u8(const wstring_view& str);
-		const string u82ansi(const u8string_view& str);
-		const wstring u82unicode(const u8string_view& str);
+	// private:
+	// 	const wstring ansi2unicode(const string_view& str);
+	// 	const string unicode2ansi(const wstring_view& str);
+	// 	const u8string ansi2u8(const string_view& str);
+	// 	const u8string unicode2u8(const wstring_view& str);
+	// 	const string u82ansi(const u8string_view& str);
+	// 	const wstring u82unicode(const u8string_view& str);
 
 	public:
 		StrConv() {};
@@ -37,6 +37,13 @@ namespace strconv
 		const tstring to_tstring(const u8string_view& str);
 		const tstring to_tstring(const char* str, const size_t& size);
 		const tstring to_tstring(const char8_t* str, const size_t& size);
+
+		const wstring ansi2unicode(const string_view& str);
+		const string unicode2ansi(const wstring_view& str);
+		const u8string ansi2u8(const string_view& str);
+		const u8string unicode2u8(const wstring_view& str);
+		const string u82ansi(const u8string_view& str);
+		const wstring u82unicode(const u8string_view& str);
 	};
 };
 

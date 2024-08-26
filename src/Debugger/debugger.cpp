@@ -1,23 +1,24 @@
 #include "debugger.h"
 #include "strconv.h"
+#include <iostream>
 
 namespace debugger
 {
     using namespace std;
     using namespace strconv;
 
-    vector<DllInfo> dllList; // 실제 벡터 객체의 인스턴스화
+    vector<DllInfo> dllList; // ???? ???? ????? ????????
    
-    PcCollectionManager pcManager; // pcCollection 벡터의 안전한 접근을 위한 pcCollectionManager 클래스 인스턴스화
+    PcCollectionManager pcManager; // pcCollection ?????? ?????? ?????? ???? pcCollectionManager ????? ????????
 
-    // pcCollection 벡터에 pc 데이터를 입력하는 메서드
+    // pcCollection ????? pc ??????? ?????? ?????
     void PcCollectionManager::pushPcInfo(PVOID pc, DWORD threadId)
     {
         lock_guard<mutex> lock(pc_mtx);
-        pcCollection.push({ pc, threadId }); // 추적할 pc와 threadID를 PcInfo 구조체 벡터에 저장
+        pcCollection.push({ pc, threadId }); // ?????? pc?? threadID?? PcInfo ????? ????? ????
     }
 
-    // pcCollection 벡터에서 안전하게 pc 정보를 읽어오는 메서드
+    // pcCollection ??????? ??????? pc ?????? ??????? ?????
     PcInfo PcCollectionManager::getPcInfo()
     {
         PcInfo temp = pcCollection.front();
@@ -34,19 +35,19 @@ namespace debugger
 
     Debug::Debug(tstring  cmdLine)
     {
-        // 메모리 초기화
-        cbNeeded = NULL;
-        ZeroMemory(&debugEvent, sizeof(debugEvent)); // 디버깅 이벤트 메모리 초기화
-        ZeroMemory(hMods, sizeof(hMods)); // 핸들 배열 초기화
-        ZeroMemory(&modInfo, sizeof(modInfo)); // 모듈 정보 구조체 초기화
-        ZeroMemory(&si, sizeof(STARTUPINFO)); // si 구조체 메모리 초기화
-        ZeroMemory(&pi, sizeof(PROCESS_INFORMATION)); // pi 구조체 메모리 초기화
+        // ??? ????
+        cbNeeded = 0;
+        ZeroMemory(&debugEvent, sizeof(debugEvent)); // ????? ???? ??? ????
+        ZeroMemory(hMods, sizeof(hMods)); // ??? ??? ????
+        ZeroMemory(&modInfo, sizeof(modInfo)); // ??? ???? ????? ????
+        ZeroMemory(&si, sizeof(STARTUPINFO)); // si ????? ??? ????
+        ZeroMemory(&pi, sizeof(PROCESS_INFORMATION)); // pi ????? ??? ????
 
-        // 기본값 할당
-        si.cb = sizeof(STARTUPINFO); // 기본값 사이즈로 초기화
+        // ???? ???
+        si.cb = sizeof(STARTUPINFO); // ???? ??????? ????
 
-        // 디버깅할 프로세스 생성
-        if (!CreateProcess(NULL, const_cast<LPWSTR>(tstringToLPWSTR(cmdLine)), NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | DEBUG_PROCESS, NULL, NULL, &si, &pi))
+        // ??????? ???????? ????
+        if (!CreateProcessW(NULL, const_cast<LPWSTR>(tstringToLPWSTR(cmdLine)), NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | DEBUG_PROCESS, NULL, NULL, &si, &pi))
         {
             fprintf(stderr, "Error creating process: %d\n", GetLastError());
             throw runtime_error("Error creating process");
@@ -54,43 +55,44 @@ namespace debugger
         hProcess = pi.hProcess;
     }
 
-    Debug::~Debug() // Debug 클래스 소멸자
+    Debug::~Debug() // Debug ????? ?????
     {
         TerminateProcess(pi.hProcess, 0);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
-        //sharedObj.reset(); // 공유 객체 삭제
+        //sharedObj.reset(); // ???? ??? ????
     }
 
-    // step-by-step 실행을 위한 context의 trap flag 설정
+    // step-by-step ?????? ???? context?? trap flag ????
     void Debug::SetTrapFlag(HANDLE hThread)
     {
         DWORD threadID = GetThreadId(hThread);
         CONTEXT ctx = { 0 };
 
-        if ((threadID != NULL) && (contextMap.find(threadID) == contextMap.end()))
+        if ((threadID != 0) && (contextMap.find(threadID) == contextMap.end()))
         {
-            ctx.ContextFlags = CONTEXT_CONTROL; // context의  control register 영역
+            ctx.ContextFlags = CONTEXT_CONTROL; // context??  control register ????
 
-            if (!GetThreadContext(hThread, &ctx)) // 현재 컨텍스트를 불러옴
+            if (!GetThreadContext(hThread, &ctx)) // ???? ???????? ?????
             {
                 fprintf(stderr, "Failed to get thread context: %d\n", GetLastError());
                 return;
             }
 
-            ctx.EFlags |= 0x100; // TF, Trap Flag 설정
+            ctx.EFlags |= 0x100; // TF, Trap Flag ????
 
-            if (!SetThreadContext(hThread, &ctx)) // TF를 설정한 컨텍스트 업데이트
+            if (!SetThreadContext(hThread, &ctx)) // TF?? ?????? ?????? ???????
             {
                 fprintf(stderr, "Failed to set thread context: %d\n", GetLastError());
             }
 
-            contextMap.emplace(threadID, hThread); // 설정한 컨텍스트 저장
+            contextMap.emplace(threadID, hThread); // ?????? ?????? ????
         }
     }
 
-    void Debug::loop(atomic_bool* isDebuggerOn)
+    void Debug::loop(std::atomic_bool* isDebuggerOn)
     {
+        
         TCHAR szModName[MAX_PATH];
         CONTEXT ctx = { 0 };
 
@@ -99,25 +101,25 @@ namespace debugger
             *isDebuggerOn = true;
             switch (debugEvent.dwDebugEventCode)
             {
-                // trap flag 설정 시 해당 case에 걸림
+                // trap flag ???? ?? ??? case?? ???
             case EXCEPTION_DEBUG_EVENT:
-                if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP) // trap flag  exception 확인시
+                if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP) // trap flag  exception ?????
                 {
-                    auto context = contextMap.find(debugEvent.dwThreadId); // 해당 threadID 검색
+                    auto context = contextMap.find(debugEvent.dwThreadId); // ??? threadID ???
                     if (context != contextMap.end())
                     {
                         ctx.ContextFlags = CONTEXT_CONTROL;
-                        if (GetThreadContext(context->second, &ctx)) // map에 저장된 핸들의 context를 가져옴
+                        if (GetThreadContext(context->second, &ctx)) // map?? ????? ????? context?? ??????
                         {
                             pcManager.pushPcInfo((PVOID)ctx.Rip, debugEvent.dwThreadId);
-                            ctx.EFlags |= 0x100; // TF 설정
-                            SetThreadContext(context->second, &ctx); // context 로드
+                            ctx.EFlags |= 0x100; // TF ????
+                            SetThreadContext(context->second, &ctx); // context ????
                         }
                     }
                 }
                 break;
 
-                // 프로세스,스레드 생성 이벤트 발생 시
+                // ????????,?????? ???? ???? ??? ??
             case CREATE_PROCESS_DEBUG_EVENT:
             case CREATE_THREAD_DEBUG_EVENT:
             {
@@ -127,18 +129,21 @@ namespace debugger
                     {
                         if (GetModuleFileNameEx(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR))
                             && GetModuleInformation(hProcess, hMods[i], &modInfo, sizeof(modInfo)))
-                        {
-                            dllList.push_back({ szModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage });
-                            // wprintf(L"%ls loaded..\n", szModName);
+                        {   
+                            std::wstring wModName(szModName, szModName + strlen(szModName));
+    
+
+                            dllList.push_back(DllInfo(wModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage));
+                            wcout << wModName << L"is loaded" << endl;
                         }
                     }
                 }
-                SetTrapFlag(debugEvent.u.CreateThread.hThread); // 첫 context TF 설정
+                SetTrapFlag(debugEvent.u.CreateThread.hThread); // ? context TF ????
             }
             break;
 
             case EXIT_PROCESS_DEBUG_EVENT:
-                continueDebugging = FALSE; // 디버거(루프) 해제 
+                continueDebugging = FALSE; // ?????(????) ???? 
                 break;
             }
             ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, DBG_CONTINUE);

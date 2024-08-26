@@ -22,10 +22,8 @@
 #define to_string_w to_string
 #endif
 
-// TCHAR를 다룰 문자열 형식 정의
 typedef std::basic_string<TCHAR> tstring;
 typedef std::basic_string_view<TCHAR> tstring_view;
 
-// 바이너리 데이터 저장을 위한 형식 정의
 typedef std::vector<BYTE> BinaryData;
 

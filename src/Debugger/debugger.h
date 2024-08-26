@@ -5,6 +5,7 @@
 #include <fstream>
 #include <mutex>
 #include <queue>
+#include <atomic>
 #include "typedef.h"
 
 namespace debugger
@@ -48,7 +49,7 @@ namespace debugger
     private:
         DEBUG_EVENT debugEvent; // 디버깅 이벤트 구조체
         PROCESS_INFORMATION pi; // 프로세스 정보 구조체
-        STARTUPINFO si; // 프로세스 시작 정보 구조체
+        STARTUPINFOW si; // 프로세스 시작 정보 구조체
         BOOL continueDebugging = TRUE; // 디버깅 루프 상태
         HANDLE hProcess; // EnumProcessModules로 모듈을 검색할 대상 프로세스
         HMODULE hMods[1024]; // EnumProcessModules로 프로세스의 각 모듈을 받기 위한 핸들 배열, 최대 1024개의 모듈을 받음 (기본값) 
@@ -58,7 +59,7 @@ namespace debugger
     public:
         Debug(tstring  cmdLine); // Debug 클래스 생성자
         ~Debug(); // Debug 클래스 소멸자
-        void loop(atomic_bool* isDebuggerOn); // pc 기록을 위한 디버깅 루프
+        void loop(std::atomic_bool* isDebuggerOn); // pc 기록을 위한 디버깅 루프
     };
 }
 

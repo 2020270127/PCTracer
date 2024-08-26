@@ -1,21 +1,20 @@
 #include "dllparser.h"
-#include "strconv.h"
 #include "cmdparser.h"
 #include "typedef.h"
-
+#include "logger.h"
+//#include <atomic>
 
 using namespace cmdparser;
 using namespace std;
 
 
-// 옵션 등록
 void configure_parser(CmdParser& parser)
 {
 	parser.set_required<tstring>(_T("d"), _T("directory"), _T("The target dll's directory."));
+	parser.set_optional<tstring>(_T("n"), _T("DB name"), _T("DLL"), _T("The target dll's directory."));
 
 };
 
-// 도움말 출력
 void print_hep_message(CmdParser& parser)
 {
 	tcout << parser.getHelpMessage(_T("TRACER"));
@@ -24,6 +23,8 @@ void print_hep_message(CmdParser& parser)
 int _tmain(int argc, TCHAR* argv[])
 {
 	CmdParser cmdParser;
+	logging::Logger Logger_;
+
 	configure_parser(cmdParser);
 	cmdParser.parseCmdLine(argc, argv);
 
@@ -35,14 +36,16 @@ int _tmain(int argc, TCHAR* argv[])
 	{
 		try
 		{
-			dllParser dllparser;
-
 			tstring targetDirectory = cmdParser.get<tstring>(_T("d"));
-			dllparser.ParseDllRecursively(targetDirectory);
+			tstring DBName = cmdParser.get<tstring>(_T("n")) + ".db";
+			dllParser dllParser_(DBName);
+			
+
+			dllParser_.parseDLLEATRecursively(targetDirectory);
 		}
-		catch (runtime_error ex)
+		catch (runtime_error e)
 		{
-			cout << format("Error : {}\n\n", ex.what());
+			Logger_.log(format(_T("Error : {}\n"), e.what()));
 			print_hep_message(cmdParser);
 		}
 	}

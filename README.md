@@ -13,14 +13,20 @@
 ### 
 - 
 
-## ISSUE
+## How to build
 ### 
-- 
+``` 
+mkdir build && cd build
+1.  cmake ..
+    VS solution build
+2.  cmake -G "Unix Makefiles" ..
+    make
+```
 
 ## Usage
 
 ### Parse Dll's Data
-- DLLParser -d <target dll's directory> 
+- DLLParser -d <target dll's directory> -n <DB's Name>
 - ex) DLLParser -d C:\Windows\System32
 
 ### Trace Target's dll
