@@ -1,6 +1,8 @@
 #include "record.h"
 #include "debugger.h"
 #include "strconv.h"
+#include "logger.h"
+#include "typedef.h"
 #include <filesystem>
 
 namespace record
@@ -8,33 +10,34 @@ namespace record
     using namespace std;
     using namespace strconv;
     using namespace debugger;
+    using namespace logging;
 
-    RECORD::RECORD(tstring searchDBPath, int log_type) : log_type_(log_type), recordDB(nullptr),
-        functionName(L"Unknown Function"), re(LR"(([^\\]+)\.dll$)", std::regex_constants::icase)
+    RECORD::RECORD(tstring tSearchDBPath, int log_type) : log_type_(log_type), recordDB(nullptr),
+        functionName("Unknown Function"), re(R"(([^\\]+)\.dll$)", std::regex_constants::icase)
     {
-        if (sqlite3_open(tstringToString(searchDBPath).c_str(), &searchDB) != SQLITE_OK) {
+        if (sqlite3_open((tSearchDBPath).c_str(), &searchDB) != SQLITE_OK) {
             std::string errMsg = "Failed to open database: " + std::string(sqlite3_errmsg(searchDB));
             sqlite3_close(searchDB);
             throw std::runtime_error(errMsg);
         }
 
-        wstring basePath = getExecutablePath();
+        tstring basePath = getExecutablePath();
 
         if (log_type == 1) // textLog
         {
-            wstring logFilePath = basePath + L"\\" + L"logs.txt";
+            /*tstring logFilePath = basePath + "\\" + "logs.txt";
             std::filesystem::path path(logFilePath);
             logFile.open(path);
             if (!logFile) {
-                wcerr << L"Failed to open log file: " << logFilePath << endl;
+                Logger_.log(format(_T("Failed to open log file: {}\n"), logFilePath), LOG_LEVEL_ERROR);
                 throw runtime_error("Failed to open log file");
-            }
+            }*/
         }
         else // database log
         {
-            wstring dbPath = basePath + L"\\logs.db";
-            if (sqlite3_open(string(dbPath.begin(), dbPath.end()).c_str(), &recordDB) != SQLITE_OK) {
-                string errMsg = "Failed to open database: " + string(sqlite3_errmsg(recordDB));
+            tstring dbPath = basePath + "\\logs.db";
+            if (sqlite3_open(dbPath.c_str(), &recordDB) != SQLITE_OK) {
+                tstring errMsg = "Failed to open database: " + tstring(sqlite3_errmsg(recordDB));
                 throw runtime_error(errMsg);
             }
 
@@ -60,75 +63,80 @@ namespace record
         if (recordDB) {
             sqlite3_close(recordDB);
         }
-        if (logFile.is_open()) {
+        /*if (logFile.is_open()) {
             logFile.close();
-        }
+        }*/
     }
 
-    wstring RECORD::getExecutablePath()
+    tstring RECORD::getExecutablePath()
     {
-        wchar_t buffer[MAX_PATH];
-        GetModuleFileNameW(NULL, buffer, MAX_PATH);
-        wstring::size_type pos = wstring(buffer).find_last_of(L"\\/");
-        return wstring(buffer).substr(0, pos);
+        tstring buffer(MAX_PATH, TEXT('\0'));  
+        GetModuleFileName(NULL, &buffer[0], MAX_PATH); 
+        buffer.resize(_tcslen(buffer.c_str()));
+
+        tstring::size_type pos = buffer.find_last_of(TEXT("\\/"));
+        return buffer.substr(0, pos);
     }
 
-    wstring RECORD::findClosestFunctionByRVA(sqlite3* db, DWORD rva, const string& tableName) {
-        string sql("SELECT Name FROM " + tableName + " WHERE RVA <= ? ORDER BY RVA DESC LIMIT 1;");
-
+    tstring RECORD::findClosestFunctionByRVA(sqlite3* db, DWORD rva, const string& tableName) {
+        tstring sql("SELECT Name FROM " + tableName + " WHERE RVA <= ? ORDER BY RVA DESC LIMIT 1;");
+        tstring tName;
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
             sqlite3_bind_int(stmt, 1, rva);
             if (sqlite3_step(stmt) == SQLITE_ROW) {
-                const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-                string utf8Name(name);
-                functionName = utf8ToWstring(utf8Name);
+#ifdef UNICODE
+                tName = StrConv_.ansi2unicode(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+#else
+                tName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+#endif
             }
             sqlite3_finalize(stmt);
         }
         else {
-            fprintf(stderr, "Failed to prepare statement: %s\n", sqlite3_errmsg(db));
+            Logger_.log(format(_T("Failed to prepare statement: {}"), sqlite3_errmsg(db)));
         }
-
-        return functionName;
+        return tName;
     }
 
-    string RECORD::extractDllName(const wstring& dllPath) {
+    tstring RECORD::extractDllName(const tstring& dllPath) {
+
         if (regex_search(dllPath, match, re) && match.size() > 1) {
-            wstring wDllName = match.str(1);
-            return wstringToUtf8(wDllName);
+            tstring dllName = match.str(1).c_str();
+            return dllName;
         }
         return "";
     }
 
-    wstring RECORD::findDllNameByPc(PVOID pc) {
+    tstring RECORD::findDllNameByPc(PVOID pc) {
         DWORD rva;
-        string dllName;
-        wstring functionName;
-        wstringstream ss;
-        wchar_t buffer[256];
+        tstring dllName;
+        tstring functionName;
+       
+        tstring buffer;
 
-        for (const auto& dll : dllList) {
+        for (const auto& dll : LoadedDLLInfoList) {
             if (pc >= dll.baseAddr && pc < (PVOID)((uintptr_t)dll.baseAddr + dll.size)) {
-                ZeroMemory(buffer, sizeof(buffer));
-                ss.clear();
+                
+
                 
                 rva = (DWORD)((uintptr_t)pc - (uintptr_t)dll.baseAddr);
                 dllName = extractDllName(dll.name);
                 functionName = findClosestFunctionByRVA(searchDB, rva, dllName);  
-                ss << utf8ToWstring(dllName) << L" -> 0x" << hex << rva << L", Function: " << functionName;
+                buffer = format(_T("{} -> 0x {:x}, Function {}"), dllName, rva, functionName);
+                //ss << utf8ToWstring(dllName) << L" -> 0x" << hex << rva << L", Function: " << functionName;
 
-                return ss.str();
+                return buffer;
             }
         }
-        return L"Unknown Module";
+        return "Unknown Module";
     }
 
-    void RECORD::record2Text(PVOID pc, wstring dllName, DWORD threadID)
+   /* void RECORD::record2Text(PVOID pc, tstring dllName, DWORD threadID)
     {
         logFile << L"PC: " << pc << L" in " << dllName << L", Thread ID: " << threadID << endl;
-    }
+    }*/
 
-    void RECORD::record2DB(PVOID pc, wstring dllName, DWORD threadID) {
+    void RECORD::record2DB(PVOID pc, tstring dllName, DWORD threadID) {
         if (!recordDB) {
             throw runtime_error("Database is not open");
         }
@@ -140,16 +148,13 @@ namespace record
             throw runtime_error(errMsg);
         }
 
-        // �����͸� 16���� ���ڿ��� ��ȯ
         stringstream ss;
         ss << "0x" << hex << (uintptr_t)pc;
         string pcStr = ss.str();
 
-        // wstring�� string���� ��ȯ
-        string dllNameStr(dllName.begin(), dllName.end());
 
         sqlite3_bind_text(stmt, 1, pcStr.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_text(stmt, 2, dllNameStr.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, dllName.c_str(), -1, SQLITE_STATIC);
         sqlite3_bind_int(stmt, 3, threadID);
 
         if (sqlite3_step(stmt) != SQLITE_DONE) {
@@ -163,7 +168,7 @@ namespace record
 
     void RECORD::log(atomic_bool* isDebuggerOn) 
     {
-        wstring dllName;
+        tstring dllName;
         size_t index = 0;
         PcInfo pcInfo;
 
@@ -182,9 +187,9 @@ namespace record
 
                 dllName = findDllNameByPc(pcInfo.pc);
 
-                if (log_type_ == 1)
-                    record2Text(pcInfo.pc, dllName, pcInfo.threadId);
-                else
+                if (log_type_ != 1)
+                    // record2Text(pcInfo.pc, dllName, pcInfo.threadId);
+                // else
                     record2DB(pcInfo.pc, dllName, pcInfo.threadId);
             }
         } while (*isDebuggerOn);

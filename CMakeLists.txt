@@ -3,6 +3,8 @@ project(PCTracer VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
+set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 # 정적 라이브러리 생성 (lib)
 add_library(
@@ -15,6 +17,7 @@ add_library(
     src/Debugger/strconv.cpp
     src/Debugger/debugger.cpp
 )
+
 
 # 애플리케이션 실행 파일 생성
 add_executable(
@@ -35,10 +38,12 @@ add_executable(
     src/PCTracer/main.cpp
     src/PCTracer/cmdparser.cpp
     src/PCTracer/record.cpp
+    src/PCTracer/logger.cpp
+    src/PCTracer/strconv.cpp
 )
 
 # 라이브러리 링크
-target_link_libraries(DLL_Parser PRIVATE Sqlite3)
+target_link_libraries(DLL_Parser PRIVATE Sqlite3)  
 target_link_libraries(PC_Tracer PRIVATE Debugger Sqlite3)
 
 add_compile_options(-Wall)

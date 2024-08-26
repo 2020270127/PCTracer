@@ -1,24 +1,22 @@
 #include "debugger.h"
-#include "strconv.h"
-#include <iostream>
 
 namespace debugger
 {
     using namespace std;
     using namespace strconv;
 
-    vector<DllInfo> dllList; // ???? ???? ????? ????????
-   
-    PcCollectionManager pcManager; // pcCollection ?????? ?????? ?????? ???? pcCollectionManager ????? ????????
+    StrConv StrConv_;
 
-    // pcCollection ????? pc ??????? ?????? ?????
+    vector<LoadedDllInfo> LoadedDLLInfoList; 
+   
+    PcCollectionManager pcManager; 
+
     void PcCollectionManager::pushPcInfo(PVOID pc, DWORD threadId)
     {
         lock_guard<mutex> lock(pc_mtx);
-        pcCollection.push({ pc, threadId }); // ?????? pc?? threadID?? PcInfo ????? ????? ????
+        pcCollection.push({ pc, threadId }); 
     }
 
-    // pcCollection ??????? ??????? pc ?????? ??????? ?????
     PcInfo PcCollectionManager::getPcInfo()
     {
         PcInfo temp = pcCollection.front();
@@ -33,60 +31,59 @@ namespace debugger
         return pcCollection.empty();
     }
 
-    Debug::Debug(tstring  cmdLine)
+    Debug::Debug(tstring  tCmdLine)
     {
-        // ??? ????
         cbNeeded = 0;
-        ZeroMemory(&debugEvent, sizeof(debugEvent)); // ????? ???? ??? ????
-        ZeroMemory(hMods, sizeof(hMods)); // ??? ??? ????
-        ZeroMemory(&modInfo, sizeof(modInfo)); // ??? ???? ????? ????
-        ZeroMemory(&si, sizeof(STARTUPINFO)); // si ????? ??? ????
-        ZeroMemory(&pi, sizeof(PROCESS_INFORMATION)); // pi ????? ??? ????
+        ZeroMemory(&debugEvent, sizeof(debugEvent));
+        ZeroMemory(hMods, sizeof(hMods));
+        ZeroMemory(&modInfo, sizeof(modInfo)); 
+        ZeroMemory(&processStartupInfo, sizeof(STARTUPINFO)); 
+        ZeroMemory(&processInfo, sizeof(PROCESS_INFORMATION)); 
 
-        // ???? ???
-        si.cb = sizeof(STARTUPINFO); // ???? ??????? ????
-
-        // ??????? ???????? ????
-        if (!CreateProcessW(NULL, const_cast<LPWSTR>(tstringToLPWSTR(cmdLine)), NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | DEBUG_PROCESS, NULL, NULL, &si, &pi))
+        processStartupInfo.cb = sizeof(STARTUPINFO);
+#ifdef UNICODE
+        wstring cmdLine = tCmdLine;
+#else
+        wstring cmdLine = StrConv_.ansi2unicode(tCmdLine);
+#endif
+        if (!CreateProcessW(NULL, const_cast<wchar_t*>(cmdLine.c_str()), NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | DEBUG_PROCESS, NULL, NULL, &processStartupInfo, &processInfo))
         {
             fprintf(stderr, "Error creating process: %d\n", GetLastError());
             throw runtime_error("Error creating process");
         }
-        hProcess = pi.hProcess;
+        hProcess = processInfo.hProcess;
     }
 
-    Debug::~Debug() // Debug ????? ?????
+    Debug::~Debug() 
     {
-        TerminateProcess(pi.hProcess, 0);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        //sharedObj.reset(); // ???? ??? ????
+        TerminateProcess(processInfo.hProcess, 0);
+        CloseHandle(processInfo.hProcess);
+        CloseHandle(processInfo.hThread);
     }
 
-    // step-by-step ?????? ???? context?? trap flag ????
     void Debug::SetTrapFlag(HANDLE hThread)
     {
         DWORD threadID = GetThreadId(hThread);
         CONTEXT ctx = { 0 };
 
-        if ((threadID != 0) && (contextMap.find(threadID) == contextMap.end()))
+        if ((threadID != 0) && (targetContextMap.find(threadID) == targetContextMap.end()))
         {
-            ctx.ContextFlags = CONTEXT_CONTROL; // context??  control register ????
+            ctx.ContextFlags = CONTEXT_CONTROL; 
 
-            if (!GetThreadContext(hThread, &ctx)) // ???? ???????? ?????
+            if (!GetThreadContext(hThread, &ctx)) 
             {
                 fprintf(stderr, "Failed to get thread context: %d\n", GetLastError());
                 return;
             }
 
-            ctx.EFlags |= 0x100; // TF, Trap Flag ????
+            ctx.EFlags |= 0x100; 
 
-            if (!SetThreadContext(hThread, &ctx)) // TF?? ?????? ?????? ???????
+            if (!SetThreadContext(hThread, &ctx)) 
             {
                 fprintf(stderr, "Failed to set thread context: %d\n", GetLastError());
             }
 
-            contextMap.emplace(threadID, hThread); // ?????? ?????? ????
+            targetContextMap.emplace(threadID, hThread);
         }
     }
 
@@ -96,30 +93,28 @@ namespace debugger
         TCHAR szModName[MAX_PATH];
         CONTEXT ctx = { 0 };
 
-        while (continueDebugging && WaitForDebugEvent(&debugEvent, INFINITE))
+        while (isDebugging && WaitForDebugEvent(&debugEvent, INFINITE))
         {
             *isDebuggerOn = true;
             switch (debugEvent.dwDebugEventCode)
             {
-                // trap flag ???? ?? ??? case?? ???
             case EXCEPTION_DEBUG_EVENT:
-                if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP) // trap flag  exception ?????
+                if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP) 
                 {
-                    auto context = contextMap.find(debugEvent.dwThreadId); // ??? threadID ???
-                    if (context != contextMap.end())
+                    auto context = targetContextMap.find(debugEvent.dwThreadId); 
+                    if (context != targetContextMap.end())
                     {
                         ctx.ContextFlags = CONTEXT_CONTROL;
-                        if (GetThreadContext(context->second, &ctx)) // map?? ????? ????? context?? ??????
+                        if (GetThreadContext(context->second, &ctx))
                         {
                             pcManager.pushPcInfo((PVOID)ctx.Rip, debugEvent.dwThreadId);
-                            ctx.EFlags |= 0x100; // TF ????
-                            SetThreadContext(context->second, &ctx); // context ????
+                            ctx.EFlags |= 0x100; 
+                            SetThreadContext(context->second, &ctx); 
                         }
                     }
                 }
                 break;
 
-                // ????????,?????? ???? ???? ??? ??
             case CREATE_PROCESS_DEBUG_EVENT:
             case CREATE_THREAD_DEBUG_EVENT:
             {
@@ -130,20 +125,17 @@ namespace debugger
                         if (GetModuleFileNameEx(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR))
                             && GetModuleInformation(hProcess, hMods[i], &modInfo, sizeof(modInfo)))
                         {   
-                            std::wstring wModName(szModName, szModName + strlen(szModName));
-    
-
-                            dllList.push_back(DllInfo(wModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage));
-                            wcout << wModName << L"is loaded" << endl;
+                            LoadedDLLInfoList.push_back(LoadedDllInfo(szModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage));
+                            tcout << szModName << "is loaded" << endl;
                         }
                     }
                 }
-                SetTrapFlag(debugEvent.u.CreateThread.hThread); // ? context TF ????
+                SetTrapFlag(debugEvent.u.CreateThread.hThread);
             }
             break;
 
             case EXIT_PROCESS_DEBUG_EVENT:
-                continueDebugging = FALSE; // ?????(????) ???? 
+                isDebugging = FALSE; 
                 break;
             }
             ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, DBG_CONTINUE);

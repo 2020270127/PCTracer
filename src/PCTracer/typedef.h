@@ -1,4 +1,5 @@
 #pragma once
+
 #include <iostream>
 #include <string>
 #include <format>
@@ -23,6 +24,22 @@
 #include <sstream>
 #include "sqlite3.h"
 
+
+
+#include <string>
+#include <windows.h>
+#include <psapi.h>
+#include <regex>
+#include <iostream>
+#include <tchar.h>
+#include <chrono>
+#include <fstream>
+
+#include <format>
+#include "sqlite3.h"
+
+
+
 #if defined(UNICODE) || defined(_UNICODE)
 #define tcout wcout
 #else
@@ -30,3 +47,11 @@
 #endif
 
 typedef std::basic_string<TCHAR> tstring;
+
+#ifdef UNICODE
+typedef std::wregex tregex;
+typedef std::wsmatch tsmatch;
+#else
+typedef std::regex tregex;
+typedef std::match_results<tstring::const_iterator> tsmatch;
+#endif

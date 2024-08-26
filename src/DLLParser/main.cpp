@@ -11,7 +11,7 @@ using namespace std;
 void configure_parser(CmdParser& parser)
 {
 	parser.set_required<tstring>(_T("d"), _T("directory"), _T("The target dll's directory."));
-	parser.set_optional<tstring>(_T("n"), _T("DB name"), _T("DLL"), _T("The target dll's directory."));
+	parser.set_optional<tstring>(_T("n"), _T("DB name"), _T("DLL"), _T("The output DB's name."));
 
 };
 

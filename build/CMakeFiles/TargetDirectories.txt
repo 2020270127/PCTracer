@@ -1,0 +1,8 @@
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/Sqlite3.dir
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/Debugger.dir
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/DLL_Parser.dir
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/PC_Tracer.dir
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/package.dir
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/package_source.dir
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/edit_cache.dir
+C:/Users/Administrator/Desktop/PCTracer/PCTracer/build/CMakeFiles/rebuild_cache.dir

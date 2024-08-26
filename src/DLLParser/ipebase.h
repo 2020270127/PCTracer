@@ -1,5 +1,4 @@
 #pragma once
-
 #include "typedef.h"
 #include "strconv.h"
 
@@ -7,7 +6,6 @@ namespace peparser
 {
 	using namespace strconv;
 
-	// DATA_DIRECTORY Ÿ�� ����
 	enum PE_DIRECTORY_TYPE
 	{
 		PE_DIRECTORY_ALL = 0xff,
@@ -17,7 +15,6 @@ namespace peparser
 		PE_DIRECTORY_DEBUG = 0x8
 	};
 
-	// Section ���� ������ ���� ����ü ����
 	typedef struct _SECTION_INFO
 	{
 		tstring Name;
@@ -30,7 +27,6 @@ namespace peparser
 	SECTION_INFO, * PSECTION_INFO;
 	typedef vector<SECTION_INFO> SectionList;
 
-	// Function ���� ������ ���� ����ü ����
 	typedef struct _FUNCTION_INFO
 	{
 		tstring Name;
@@ -40,10 +36,8 @@ namespace peparser
 	FUNCTION_INFO, * PFUNCTION_INFO;
 	typedef vector<FUNCTION_INFO> Functionist;
 
-	// Module name, FUNCTION_INFO ���� ������ ���� ����(Ʃ��) ����
 	typedef vector<tuple<tstring, Functionist>> ModuleFunctionist;
 
-	// PDB ������ ���� ����ü ����
 #define IMAGE_PDB_SIGNATURE 0x53445352 // "RSDS"
 	typedef struct _IMAGE_PDB_INFO
 	{
@@ -54,7 +48,6 @@ namespace peparser
 	}
 	IMAGE_PDB_INFO, * PIMAGE_PDB_INFO;
 
-	// PDB ���� ������ ���� ����ü ����
 	typedef struct _PDB_FILE_INFO
 	{
 		tstring FilePath;
@@ -62,17 +55,14 @@ namespace peparser
 	}
 	PDB_FILE_INFO, * PPDB_FILE_INFO;
 
-	// TLS Callback �ּ� ������ ���� ����ü ����
 	typedef struct _TLS_CALLBACK
 	{
 		size_t TlsCallbackAddress;
 	}
 	TLS_CALLBACK, * PTLS_CALLBACK;
 
-	// TLS Callback �ּ� ���� ������ ���Ѻ��� ����
 	typedef vector<TLS_CALLBACK> TlsCallbackList;
 
-	// PE ������ ��� ���� ����ü ����
 	typedef struct _PE_STRUCT
 	{
 		bool is32Bit;
@@ -98,7 +88,6 @@ namespace peparser
 	}
 	PE_STRUCT;
 
-	// PE file �Ǵ� PE process �������� �ʿ��� �Լ����� ������ �������̽� Ŭ����
 	class IPEBase
 	{
 	public:
