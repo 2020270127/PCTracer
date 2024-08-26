@@ -1,2 +1,0 @@
-C:/Strawberry/c/bin/ar.exe qc Sqlite3.a CMakeFiles/Sqlite3.dir/src/sqlite3/sqlite3.c.obj
-C:/Strawberry/c/bin/ranlib.exe Sqlite3.a

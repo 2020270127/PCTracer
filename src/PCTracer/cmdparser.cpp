@@ -4,25 +4,21 @@ namespace cmdutil
 {
     using namespace std;
 
-    // �ɼ� �̸� �� (�̸� �Ǵ� ��Ī�� ��ġ�ϴ� �� ���� Ȯ��)
     bool CmdBase::compare(const tstring& name)
     {
         return ((name_.compare(name) == 0) || (alternative_.compare(name) == 0));
     };
 
-    // �ʼ� �ɼ����� ���� Ȯ��
     bool CmdBase::isRequired(void)
     {
         return required_;
     };
 
-    // �ɼ� ���� �����Ǿ��� �� ���� Ȯ��
     bool CmdBase::isSet(void)
     {
         return isSet_;
     };
 
-    // OPTION_INFO_TYPE�� ���ǵ� �ɼ��� ������ ����
     tstring CmdBase::getOptionInfo(const OPTION_INFO_TYPE& type)
     {
         switch (type)
@@ -38,13 +34,11 @@ namespace cmdutil
         }
     };
 
-    // �ɼ��� �ϳ��� ��� �Ǿ����� ���� Ȯ��
     bool CmdParser::hasOptions(void)
     {
         return !command_.empty();
     };
 
-    // ��ϵǾ� �ִ� �ʼ� �ɼǵ��� �� �����Ǿ����� üũ
     bool CmdParser::isRequiredOptionSet(void)
     {
         bool isSet = true;
@@ -60,15 +54,11 @@ namespace cmdutil
         return isSet;
     }
 
-    // ���� ��� ���� Ȯ��
-    // (���� ��� �ɼ��� �����Ǿ��ų� ��ϵ� �ɼ��� ���ų� 
-    // �ʼ� �ɼ��� ���� �������� ���� ��� ���� ����� �ʿ�)
     bool CmdParser::isPrintHelp(void)
     {
         return (help_ || (!hasOptions()) || (!isRequiredOptionSet()));
     };
 
-    // ����� �ɼ� ��� ����
     void CmdParser::clear(void)
     {
         for (const auto& iter : command_)
@@ -79,7 +69,6 @@ namespace cmdutil
         help_ = false;
     };
 
-    // �̸����� �ɼ��� ����� ��ġ�� iterator ã��
     vector<CmdBase*>::iterator CmdParser::find(const tstring& name)
     {
         for (vector<CmdBase*>::iterator iter = command_.begin(); iter != command_.end(); iter++)
@@ -92,7 +81,6 @@ namespace cmdutil
         return command_.end();
     };
 
-    // command line parsing
     void CmdParser::parseCmdLine(int argc, TCHAR* argv[])
     {
         tstring name;
@@ -105,10 +93,8 @@ namespace cmdutil
         }
         else
         {
-            // ù ��° �׸��� ���� ���� �ڽ��� �̸��̱� ������ ����
             for (int index = 1; index < argc; index++)
             {
-                // ���� ��� �ɼ��� ���� �ƴ��� Ȯ�� 
                 name = argv[index];
                 if ((name.compare(_T("-h")) == 0) || (name.compare(_T("--help")) == 0))
                 {
@@ -117,14 +103,12 @@ namespace cmdutil
                 }
                 else if (name.at(0) == '-')
                 {
-                    // �ɼ� ���ڿ����� '-' ���� ����
                     name.erase(remove(name.begin(), name.end(), '-'), name.end());
 
-                    // ��ϵ� �ɼ����� ���θ� Ȯ���Ͽ�, ��ϵ� �ɼ��̸� �Էµ� ���� �о ����
                     // iter == vector<CmdBase*>::iterator
                     const auto& iter = find(name);
 
-                    if ((iter != command_.end()) && (++index < argc)) // ++index�� �ɼǿ� ������ �� ��ġ�� �̵�
+                    if ((iter != command_.end()) && (++index < argc)) 
                     {
                         const auto& type = typeid(*(*iter));
                         try
@@ -141,10 +125,8 @@ namespace cmdutil
                             {
                                 (dynamic_cast<CmdOption<tstring> *>(*iter))->set(tstring(argv[index]));
                             }
-                            // typeid �ν� ������ Ÿ�Կ� ���ؼ� �߰� ����
                             else
                             {
-                                // typeid name()�� char*
                                 cout << format("Unknown option type : {}\n", typeid(*(*iter)).name());
                             }
                         }

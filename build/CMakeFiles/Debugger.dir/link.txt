@@ -1,2 +1,0 @@
-C:/Strawberry/c/bin/ar.exe qc Debugger.a CMakeFiles/Debugger.dir/src/Debugger/strconv.cpp.obj CMakeFiles/Debugger.dir/src/Debugger/debugger.cpp.obj
-C:/Strawberry/c/bin/ranlib.exe Debugger.a
