@@ -33,3 +33,6 @@
 
 # Mac's environment 
 .DS_Store
+
+# cmake build
+/build
