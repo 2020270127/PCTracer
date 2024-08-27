@@ -162,7 +162,7 @@ namespace logging
     {
         if (globalSQLDBPointer)
         {
-            string sql = "INSERT INTO " + globalTSQLTableName + " (Name, Ordinal, RVA) VALUES (?, ?, ?);";
+            tstring sql = "INSERT INTO " + globalTSQLTableName + " (Name, Ordinal, RVA) VALUES (?, ?, ?);";
             sqlite3_stmt* stmt = nullptr;
             tstring Name = "No Information";
             if (sqlite3_prepare_v2(globalSQLDBPointer, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK)

@@ -13,10 +13,7 @@
 namespace debugger
 {
     using namespace std;
-    //using namespace strconv;
-    extern strconv::StrConv StrConv_;
-
-    static unordered_map<DWORD, HANDLE> targetContextMap; 
+    using namespace strconv;
 
     struct LoadedDllInfo {
         tstring name;
@@ -28,8 +25,6 @@ namespace debugger
         PVOID pc;
         DWORD threadId;
     };
-
-    extern vector<LoadedDllInfo> LoadedDLLInfoList; 
 
     class PcCollectionManager
     {
@@ -43,27 +38,31 @@ namespace debugger
         void pushPcInfo(PVOID pc, DWORD threadId);
         PcInfo getPcInfo();
         bool isEmpty();
-    } ;
-    extern PcCollectionManager pcManager;
+    };
 
     class Debug
     {
     private:
         DEBUG_EVENT debugEvent;
-        PROCESS_INFORMATION processInfo; 
-        STARTUPINFOW processStartupInfo; 
+        PROCESS_INFORMATION processInfo;
+        STARTUPINFOW processStartupInfo;
         BOOL isDebugging = TRUE;
-        HANDLE hProcess; 
-        HMODULE hMods[1024];  
+        HANDLE hProcess;
+        HMODULE hMods[1024];
         DWORD cbNeeded;
-        MODULEINFO modInfo; 
+        MODULEINFO modInfo;
 
     private:
-        void SetTrapFlag(HANDLE hThread); 
+        void SetTrapFlag(HANDLE hThread);
     public:
-        Debug(tstring  cmdLine); 
-        ~Debug(); 
-        void debuggingLoop(std::atomic_bool* isDebuggerOn); 
+        Debug(tstring  cmdLine);
+        ~Debug();
+        void debuggingLoop(std::atomic_bool* isDebuggerOn);
     };
+
+    static unordered_map<DWORD, HANDLE> targetContextMap;
+    extern vector<LoadedDllInfo> LoadedDLLInfoList;
+    extern PcCollectionManager pcManager;
+    extern StrConv StrConv_;
 }
 

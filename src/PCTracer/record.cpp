@@ -113,7 +113,6 @@ namespace record
         DWORD rva;
         tstring dllName;
         tstring functionName;
-       
         tstring buffer;
 
         for (const auto& dll : LoadedDLLInfoList) {
@@ -126,7 +125,7 @@ namespace record
                 return buffer;
             }
         }
-        return "Unknown Module";
+        return _T("Unknown Module");
     }
 
     void RECORD::record2Text(PVOID pc, tstring dllName, DWORD threadID)
@@ -153,7 +152,7 @@ namespace record
         sqlite3_bind_int(stmt, 3, threadID);
 
         if (sqlite3_step(stmt) != SQLITE_DONE) {
-            string errMsg = "Failed to execute insert statement: " + string(sqlite3_errmsg(recordDB));
+            tstring errMsg = _T("Failed to execute insert statement: ") + tstring(sqlite3_errmsg(recordDB));
             sqlite3_finalize(stmt);
             throw runtime_error(errMsg);
         }
