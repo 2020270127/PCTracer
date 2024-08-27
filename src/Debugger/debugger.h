@@ -63,7 +63,7 @@ namespace debugger
     public:
         Debug(tstring  cmdLine); 
         ~Debug(); 
-        void loop(std::atomic_bool* isDebuggerOn); 
+        void debuggingLoop(std::atomic_bool* isDebuggerOn); 
     };
 }
 

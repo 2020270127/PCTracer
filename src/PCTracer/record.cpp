@@ -25,13 +25,13 @@ namespace record
 
         if (log_type == 1) // textLog
         {
-            /*tstring logFilePath = basePath + "\\" + "logs.txt";
+            tstring logFilePath = basePath + "\\" + "logs.txt";
             std::filesystem::path path(logFilePath);
             logFile.open(path);
             if (!logFile) {
                 Logger_.log(format(_T("Failed to open log file: {}\n"), logFilePath), LOG_LEVEL_ERROR);
                 throw runtime_error("Failed to open log file");
-            }*/
+            }
         }
         else // database log
         {
@@ -63,9 +63,9 @@ namespace record
         if (recordDB) {
             sqlite3_close(recordDB);
         }
-        /*if (logFile.is_open()) {
+        if (logFile.is_open()) {
             logFile.close();
-        }*/
+        }
     }
 
     tstring RECORD::getExecutablePath()
@@ -81,9 +81,11 @@ namespace record
     tstring RECORD::findClosestFunctionByRVA(sqlite3* db, DWORD rva, const string& tableName) {
         tstring sql("SELECT Name FROM " + tableName + " WHERE RVA <= ? ORDER BY RVA DESC LIMIT 1;");
         tstring tName;
-        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) 
+        {
             sqlite3_bind_int(stmt, 1, rva);
-            if (sqlite3_step(stmt) == SQLITE_ROW) {
+            if (sqlite3_step(stmt) == SQLITE_ROW) 
+            {
 #ifdef UNICODE
                 tName = StrConv_.ansi2unicode(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
 #else
@@ -107,7 +109,7 @@ namespace record
         return "";
     }
 
-    tstring RECORD::findDllNameByPc(PVOID pc) {
+    tstring RECORD::findDLLBelongingNameByPc(PVOID pc) {
         DWORD rva;
         tstring dllName;
         tstring functionName;
@@ -116,14 +118,10 @@ namespace record
 
         for (const auto& dll : LoadedDLLInfoList) {
             if (pc >= dll.baseAddr && pc < (PVOID)((uintptr_t)dll.baseAddr + dll.size)) {
-                
-
-                
                 rva = (DWORD)((uintptr_t)pc - (uintptr_t)dll.baseAddr);
                 dllName = extractDllName(dll.name);
                 functionName = findClosestFunctionByRVA(searchDB, rva, dllName);  
-                buffer = format(_T("{} -> 0x {:x}, Function {}"), dllName, rva, functionName);
-                //ss << utf8ToWstring(dllName) << L" -> 0x" << hex << rva << L", Function: " << functionName;
+                buffer = format(_T("{} -> 0x{:x}, Function {}"), dllName, rva, functionName);               
 
                 return buffer;
             }
@@ -131,27 +129,24 @@ namespace record
         return "Unknown Module";
     }
 
-   /* void RECORD::record2Text(PVOID pc, tstring dllName, DWORD threadID)
+    void RECORD::record2Text(PVOID pc, tstring dllName, DWORD threadID)
     {
-        logFile << L"PC: " << pc << L" in " << dllName << L", Thread ID: " << threadID << endl;
-    }*/
+        logFile << format(_T("PC: {} in {}, Thread ID: {}\n"), pc, dllName, threadID);
+    }
 
     void RECORD::record2DB(PVOID pc, tstring dllName, DWORD threadID) {
         if (!recordDB) {
             throw runtime_error("Database is not open");
         }
 
-        sqlite3_stmt* stmt;
+        //sqlite3_stmt* stmt;
+        tstring pcStr = format(_T("{:x}"), (uintptr_t)pc);
         const char* insertSQL = "INSERT INTO log (pc, dllName, threadID) VALUES (?, ?, ?);";
+
         if (sqlite3_prepare_v2(recordDB, insertSQL, -1, &stmt, nullptr) != SQLITE_OK) {
             string errMsg = "Failed to prepare insert statement: " + string(sqlite3_errmsg(recordDB));
             throw runtime_error(errMsg);
         }
-
-        stringstream ss;
-        ss << "0x" << hex << (uintptr_t)pc;
-        string pcStr = ss.str();
-
 
         sqlite3_bind_text(stmt, 1, pcStr.c_str(), -1, SQLITE_STATIC);
         sqlite3_bind_text(stmt, 2, dllName.c_str(), -1, SQLITE_STATIC);
@@ -162,17 +157,16 @@ namespace record
             sqlite3_finalize(stmt);
             throw runtime_error(errMsg);
         }
-
         sqlite3_finalize(stmt);
     }
 
-    void RECORD::log(atomic_bool* isDebuggerOn) 
+    void RECORD::logUntilPcmanagerIsEmpty(atomic_bool* isDebuggerOn) 
     {
         tstring dllName;
         size_t index = 0;
         PcInfo pcInfo;
 
-        cout << "logging started..." << endl;
+        Logger_.log(_T("logging started...\n"));
         do
         {
             while (!pcManager.isEmpty())
@@ -181,19 +175,18 @@ namespace record
                     pcInfo = pcManager.getPcInfo(); 
                 }
                 catch (const out_of_range& e) {
-                    cerr << "Index out of range: " << e.what() << endl;
+                    Logger_.log(format(_T("Index out of range {}\n"), e.what()), LOG_LEVEL_ERROR);
                     break;
                 }
 
-                dllName = findDllNameByPc(pcInfo.pc);
+                dllName = findDLLBelongingNameByPc(pcInfo.pc);
 
-                if (log_type_ != 1)
-                    // record2Text(pcInfo.pc, dllName, pcInfo.threadId);
-                // else
+                if (log_type_ == 1)
+                     record2Text(pcInfo.pc, dllName, pcInfo.threadId);
+                 else
                     record2DB(pcInfo.pc, dllName, pcInfo.threadId);
             }
         } while (*isDebuggerOn);
-
-        cout << "logging finished!" << endl;
+        Logger_.log(_T("logging finished!\n"));
     }
 }

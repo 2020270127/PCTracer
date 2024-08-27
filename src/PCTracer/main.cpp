@@ -7,6 +7,7 @@
 using namespace cmdutil;
 using namespace debugger;
 using namespace record;
+using namespace logging;
 
 shared_ptr<Debug> sharedDebugger; 
 
@@ -25,6 +26,7 @@ void print_hep_message(CmdParser& parser)
 int _tmain(int argc, TCHAR* argv[])
 {
 	CmdParser cmdParser;
+    Logger logger;
 	configure_parser(cmdParser);
 	cmdParser.parseCmdLine(argc, argv);
 
@@ -45,15 +47,15 @@ int _tmain(int argc, TCHAR* argv[])
             
             thread debugThread([&target_path, &isDebuggerOn]() {
                 sharedDebugger = make_shared<Debug>(target_path);
-                sharedDebugger->loop(&isDebuggerOn); 
+                sharedDebugger->debuggingLoop(&isDebuggerOn); 
             });
             
-            recorder.log(&isDebuggerOn); 
+            recorder.logUntilPcmanagerIsEmpty(&isDebuggerOn); 
             debugThread.join(); 
         }
         catch (const exception& e)
         {
-            cerr << "An error occurred: " << e.what() << endl;
+            logger.log(format(_T("An error occurred: {}"), e.what()), LOG_LEVEL_ERROR);
         }
 	}
 	return 0;

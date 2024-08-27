@@ -158,7 +158,7 @@ namespace logging
         }
     }
     
-    void SQLDBLogger::LogToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress) 
+    void SQLDBLogger::logToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress) 
     {
         if (globalSQLDBPointer)
         {
@@ -193,7 +193,7 @@ namespace logging
     void SQLDBLogger::printToConsoleAndLogToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress)
     {
         Logger_.log(format(_T("Function {}({}), at {:x}"), functionName, functionOrdinal, functionAddress));
-        LogToSQLDB(functionName, functionOrdinal, functionAddress);
+        logToSQLDB(functionName, functionOrdinal, functionAddress);
     }
 };
 

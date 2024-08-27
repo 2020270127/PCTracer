@@ -87,7 +87,7 @@ namespace debugger
         }
     }
 
-    void Debug::loop(std::atomic_bool* isDebuggerOn)
+    void Debug::debuggingLoop(std::atomic_bool* isDebuggerOn)
     {
         
         TCHAR szModName[MAX_PATH];

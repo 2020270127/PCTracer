@@ -61,7 +61,7 @@ namespace logging
 		tstring globalTSQLTableName; 
 		
 	private:
-		void LogToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress) ;
+		void logToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress) ;
 
 	public:
 		void printToConsoleAndLogToSQLDB(tstring functionName, size_t functionOrdinal, size_t functionAddress);
