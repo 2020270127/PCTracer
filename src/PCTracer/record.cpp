@@ -120,7 +120,7 @@ namespace record
                 rva = (DWORD)((uintptr_t)pc - (uintptr_t)dll.baseAddr);
                 dllName = extractDllName(dll.name);
                 functionName = findClosestFunctionByRVA(searchDB, rva, dllName);  
-                buffer = format(_T("{} -> 0x{:x}, Function {}"), dllName, rva, functionName);               
+                buffer = format(_T("{} -> RVA: 0x{:x}, Function Name: {}"), dllName, rva, functionName);               
 
                 return buffer;
             }
