@@ -1,6 +1,8 @@
 #include "debugger.h"
 #include <tchar.h>
+#include <format>
 
+#define SPLITLINE "\n--------------------------------------------------------------------------------------------------------------------------\n"
 namespace debugger
 {
     using namespace std;
@@ -32,38 +34,7 @@ namespace debugger
         return pcCollection.empty();
     }
     
-    void EnableDebugPrivilege()
-    {
-        HANDLE hToken;
-        TOKEN_PRIVILEGES tkp;
-
-        // 현재 프로세스의 토큰을 가져옵니다.
-        if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
-        {
-            // 디버그 권한의 LUID를 가져옵니다.
-            LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &tkp.Privileges[0].Luid);
-            tkp.PrivilegeCount = 1;  // 1개의 권한을 조정합니다.
-            tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-            // 프로세스 토큰에 디버그 권한을 설정합니다.
-            AdjustTokenPrivileges(hToken, FALSE, &tkp, sizeof(tkp), NULL, NULL);
-
-            if (GetLastError() == ERROR_SUCCESS)
-            {
-                std::wcout << L"SeDebugPrivilege successfully enabled." << std::endl;
-            }
-            else
-            {
-                std::wcerr << L"Failed to enable SeDebugPrivilege." << std::endl;
-            }
-
-            CloseHandle(hToken);
-        }
-        else
-        {
-            std::wcerr << L"Failed to open process token." << std::endl;
-        }
-    }
+   
 
     Debug::Debug(tstring  tCmdLine)
     {
@@ -80,8 +51,8 @@ namespace debugger
 #else
         wstring cmdLine = StrConv_.ansi2unicode(tCmdLine);
 #endif
-        EnableDebugPrivilege();
-        if (!CreateProcessW(NULL, const_cast<wchar_t*>(cmdLine.c_str()), NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | DEBUG_PROCESS | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, NULL, NULL, &processStartupInfo, &processInfo))
+        
+        if (!CreateProcessW(NULL, const_cast<wchar_t*>(cmdLine.c_str()), NULL, NULL, FALSE, DEBUG_ONLY_THIS_PROCESS | DEBUG_PROCESS , NULL, NULL, &processStartupInfo, &processInfo))
         {
             fprintf(stderr, "Error creating process: %d\n", GetLastError());
             throw runtime_error("Error creating process");
@@ -167,6 +138,7 @@ bool isInProcessRange = true;  // 프로세스 내부 흐름을 추적하는 플래그
 // 전역 변수 선언
 PVOID g_baseAddr = nullptr;
 SIZE_T g_imageSize = 0;
+int createdThreadCount = 0;
 
 void Debug::debuggingLoop(std::atomic_bool* isDebuggerOn)
 {
@@ -212,48 +184,37 @@ void Debug::debuggingLoop(std::atomic_bool* isDebuggerOn)
                 }
                 else
                 {
-                    tcout << "WWWWWWWWW thread id: " << debugEvent.dwThreadId << endl;
+                    tcout << "Context Invalid " << debugEvent.dwThreadId << endl;
                 }
             }
             break;
 
         case CREATE_PROCESS_DEBUG_EVENT:
         {
-            hProcess = debugEvent.u.CreateProcessInfo.hProcess;
-            tcout << "Process created, handle: " << hProcess << endl;
-
-            
-            
-            // 메인 스레드에 대해 SetTrapFlag 호출
+            tcout << format(_T("Main process created\n"), createdThreadCount);
             SetTrapFlag(debugEvent.u.CreateProcessInfo.hThread);
-
-            // 추가 초기화 코드...
         }
         break;
-
+        
         case CREATE_THREAD_DEBUG_EVENT:
         {
-           
+            createdThreadCount++;
+            tcout << format(_T("\nThread {} created\n"), createdThreadCount);
             if (EnumProcessModulesEx(hProcess, hMods, sizeof(hMods), &cbNeeded, LIST_MODULES_64BIT))
             {
-                
-
-                for (unsigned int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+                if (GetModuleFileNameEx(hProcess, hMods[0], szModName, sizeof(szModName) / sizeof(TCHAR))
+                    && GetModuleInformation(hProcess, hMods[0], &modInfo, sizeof(modInfo)))
                 {
-                    if (GetModuleFileNameEx(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR))
-                        && GetModuleInformation(hProcess, hMods[i], &modInfo, sizeof(modInfo)))
+                    if (g_baseAddr == nullptr) // 메인 모듈은 항상 첫번째로 로드
                     {
-                        if (!_tcsicmp(szModName, _T("C:\\Users\\Administrator\\source\\repos\\fuzzXpdf\\x64\\Debug\\HELLO.exe")))
-                        {
-                            g_baseAddr = modInfo.lpBaseOfDll;
-                            g_imageSize = modInfo.SizeOfImage;
-                            tcout << "Main Module Base Address: " << g_baseAddr << " Size: " << g_imageSize << " bytes" << endl;
-                        }
-                        LoadedDLLInfoList.push_back(LoadedDllInfo(szModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage));
-                        tcout << szModName << " is loaded" << endl;
-                    }
-                }
+                        g_baseAddr = modInfo.lpBaseOfDll;
+                        g_imageSize = modInfo.SizeOfImage;
+                        tcout << format(_T("\nMain process's memory address range\n    0x{:x} ~ 0x{:x}, \n"), reinterpret_cast<uintptr_t>(g_baseAddr), reinterpret_cast<uintptr_t>(g_baseAddr) + g_imageSize);
+                        LoadedDLLInfoList.push_back(LoadedDllInfo(szModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage));  
+                    }      
+                }  
             }
+            
             SetTrapFlag(debugEvent.u.CreateThread.hThread);  // 트랩 플래그를 설정
         }
         break;
@@ -262,8 +223,10 @@ void Debug::debuggingLoop(std::atomic_bool* isDebuggerOn)
         {
             TCHAR szModName[MAX_PATH] = { 0 };
             DWORD sizeOfImage;
+            HMODULE hMod = nullptr;
+            
 
-            if (debugEvent.u.LoadDll.hFile)
+            if(debugEvent.u.LoadDll.hFile)
             {
                 // Get the module file name
                 if (GetFinalPathNameByHandleA(debugEvent.u.LoadDll.hFile, szModName, MAX_PATH, 0))
@@ -276,24 +239,22 @@ void Debug::debuggingLoop(std::atomic_bool* isDebuggerOn)
                         strncpy(szModName, path.c_str(), MAX_PATH); // szModName에 다시 저장하여 C-스트링으로 유지
                     }
 
-                    tcout << szModName << " is loaded" << endl;
 
-                    if (path == "C:\\Users\\Administrator\\source\\repos\\fuzzXpdf\\x64\\Debug\\printhello.dll")
+                    
+
+                    if (GetModuleInformation(debugEvent.u.LoadDll.hFile, hMod, &modInfo, sizeof(modInfo)))
                     {
-                        // 파일 경로를 기반으로 SizeOfImage 가져오기
+                        LoadedDLLInfoList.push_back(LoadedDllInfo(szModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage));
+                        tcout << format(_T("\nLoaded DLL Information By Target Process\n    Module:{}, Base Address:{}, Size Of Image:{}bytes\n"), szModName, modInfo.lpBaseOfDll, modInfo.SizeOfImage);
+                    }
+                   else
+                    {
                         sizeOfImage = GetSizeOfImageFromFile(path);
                         LoadedDLLInfoList.push_back(LoadedDllInfo(szModName, debugEvent.u.LoadDll.lpBaseOfDll, sizeOfImage));
-                        tcout << "Module: " << szModName << " Base Address: " << debugEvent.u.LoadDll.lpBaseOfDll << " SizeOfImage: " << sizeOfImage << " bytes" << endl;
-                        // 추가 작업 수행...
+                        tcout << format(_T("\nLoaded DLL Information By Target Process, DLL path\n  Module:{}, Base Address:{}, Size Of Image:{}bytes\n"), szModName, debugEvent.u.LoadDll.lpBaseOfDll, sizeOfImage);
                     }
-
-                    // LoadedDLLInfoList에 추가 (CREATE_THREAD_DEBUG_EVENT 방식과 동일하게)
-                    // LoadedDLLInfoList.push_back(LoadedDllInfo(szModName, debugEvent.u.LoadDll.lpBaseOfDll, sizeOfImage));
-
-                    //tcout << "Module: " << szModName << " Base Address: " << debugEvent.u.LoadDll.lpBaseOfDll << " SizeOfImage: " << sizeOfImage << " bytes" << endl;
                 }
             }
-
         }
         break;
 
